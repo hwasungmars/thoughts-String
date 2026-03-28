@@ -1,0 +1,10 @@
+---
+title: "Latest Posts"
+listing:
+  contents: posts
+  sort: "date desc"
+  type: default
+  categories: true
+execute:
+  freeze: true  # This tells Quarto: "Don't re-run the code; just use the results I saved locally."
+---

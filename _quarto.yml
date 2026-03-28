@@ -1,0 +1,24 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "thoughts :: [String]"
+  description: "Sequence of thoughts"
+  site-url: "https://hwasungmars.github.io/thoughts-String"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: archive.qmd
+        text: Archive
+
+format:
+  html:
+    theme: cosmo
+    code-copy: true
+    code-line-numbers: true
+    code-fold: show      # Shows code by default, but allows hiding
+    toc: true            # Table of contents for long technical posts
+    number-sections: true
+    html-math-method: mathjax # The gold standard for LaTeX
