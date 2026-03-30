@@ -1,8 +1,10 @@
 [
   {
     "listing": "/index.html",
-    "items": [
-      "/posts/2026-03-28/KL&f-divergence.html"
-    ]
+    "items": []
+  },
+  {
+    "listing": "/archive.html",
+    "items": []
   }
 ]
