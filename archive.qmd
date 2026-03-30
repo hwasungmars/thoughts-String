@@ -1,0 +1,10 @@
+---
+title: "Archive"
+listing:
+  contents: posts
+  type: table
+  sort: "date desc"
+  categories: false
+  sort-ui: true
+  filter-ui: true
+---
