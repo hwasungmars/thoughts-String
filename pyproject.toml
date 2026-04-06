@@ -6,7 +6,35 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "jax>=0.9.2",
-    "jupyter>=1.1.1",
+    "jaxtyping>=0.3.9",
     "matplotlib>=3.10.8",
-    "torch>=2.11.0",
+    "optax>=0.2.8",
 ]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "ruff>=0.15.9",
+    "ty>=0.0.28",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "F",   # Pyflakes (Catches logical errors, unused imports)
+    "E",   # pycodestyle errors (Basic PEP8 compliance)
+    "W",   # pycodestyle warnings
+    "I",   # isort (Automatically sorts your imports)
+    "UP",  # pyupgrade (Forces modern Python syntax like `|` for Unions)
+    "B",   # flake8-bugbear (Catches common programming traps and bugs)
+    "C4",  # flake8-comprehensions (Optimizes list/dict comprehensions)
+    "SIM", # flake8-simplify (Helps clean up complex `if` statements)
+    "ANN", # flake8-annotations (Your current choice for type hinting)
+    "RUF", # Ruff-specific rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+# If you only want to ignore it in your blog post notebooks
+"**/*.ipynb" = ["F722", "F821"]
