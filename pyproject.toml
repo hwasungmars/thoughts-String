@@ -19,7 +19,7 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 80  # To fit in Quarto's code box.
 
 [tool.ruff.lint]
 select = [
