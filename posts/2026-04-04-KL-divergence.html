@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3ab3c25880d787e734ee9f73ca06a7d1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -223,8 +223,16 @@ window.Quarto = {
 <section id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture"><span class="header-section-number">2</span> Example: Fitting a single Gaussian to a Bimodal Gaussian Mixture</h2>
 <p>Consider that we have a bimodal Gaussian mixture <span class="math inline">\(P\)</span> and we want to fit it with a single Gaussian distribution <span class="math inline">\(Q\)</span>. Depending on whether we use forward KL loss function or reverse KL loss function, we get two very contrasting results.</p>
-<p>Here is how it works conceptually: * <strong>True Distribution (<span class="math inline">\(P\)</span>):</strong> A mixture of two Gaussians (e.g., one peak at <span class="math inline">\(x=-2\)</span> and another at <span class="math inline">\(x=2\)</span>). * <strong>Model Distribution (<span class="math inline">\(Q\)</span>):</strong> A single Gaussian parameterized by its mean (<span class="math inline">\(\mu\)</span>) and standard deviation (<span class="math inline">\(\sigma\)</span>).</p>
-<p>When you train <span class="math inline">\(Q\)</span> to match <span class="math inline">\(P\)</span>: 1. <strong>Forward KL (<span class="math inline">\(D_{KL}(P||Q)\)</span> - Mean-Seeking):</strong> The model <span class="math inline">\(Q\)</span> must avoid making <span class="math inline">\(q_i\)</span> small where <span class="math inline">\(p_i\)</span> is large (since <span class="math inline">\(p_i \log(p_i/q_i)\)</span> blows up if <span class="math inline">\(q_i \to 0\)</span>). Therefore, the single Gaussian spreads out wide to cover <em>both</em> peaks, placing its mean in the middle (around <span class="math inline">\(x=0\)</span>) even though <span class="math inline">\(P\)</span> has very low probability there. 2. <strong>Reverse KL (<span class="math inline">\(D_{KL}(Q||P)\)</span> - Mode-Seeking):</strong> The model <span class="math inline">\(Q\)</span> must avoid placing probability mass where <span class="math inline">\(P\)</span> has none (since <span class="math inline">\(q_i \log(q_i/p_i)\)</span> blows up if <span class="math inline">\(p_i \to 0\)</span>). To avoid the “valley” between the two peaks, the single Gaussian collapses onto just <em>one</em> of the peaks and completely ignores the other.</p>
+<p>The setup:</p>
+<ul>
+<li><strong>True Distribution (<span class="math inline">\(P\)</span>):</strong> A mixture of two Gaussians (e.g., one peak at <span class="math inline">\(x=-2\)</span> and another at <span class="math inline">\(x=2\)</span>).</li>
+<li><strong>Model Distribution (<span class="math inline">\(Q\)</span>):</strong> A single Gaussian parameterized by its mean (<span class="math inline">\(\mu\)</span>) and standard deviation (<span class="math inline">\(\sigma\)</span>).</li>
+</ul>
+<p>When you train <span class="math inline">\(Q\)</span> to match <span class="math inline">\(P\)</span>:</p>
+<ol type="1">
+<li><strong>Forward KL (<span class="math inline">\(D_{KL}(P||Q)\)</span> - Mean-Seeking):</strong> The model <span class="math inline">\(Q\)</span> must avoid making <span class="math inline">\(q_i\)</span> small where <span class="math inline">\(p_i\)</span> is large (since <span class="math inline">\(p_i \log(p_i/q_i)\)</span> blows up if <span class="math inline">\(q_i \to 0\)</span>). Therefore, the single Gaussian spreads out wide to cover <em>both</em> peaks, placing its mean in the middle (around <span class="math inline">\(x=0\)</span>) even though <span class="math inline">\(P\)</span> has very low probability there.</li>
+<li><strong>Reverse KL (<span class="math inline">\(D_{KL}(Q||P)\)</span> - Mode-Seeking):</strong> The model <span class="math inline">\(Q\)</span> must avoid placing probability mass where <span class="math inline">\(P\)</span> has none (since <span class="math inline">\(q_i \log(q_i/p_i)\)</span> blows up if <span class="math inline">\(p_i \to 0\)</span>). To avoid the “valley” between the two peaks, the single Gaussian collapses onto just <em>one</em> of the peaks and completely ignores the other.</li>
+</ol>
 </section>
 <section id="jax-implementation" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="jax-implementation"><span class="header-section-number">3</span> JAX implementation</h2>
@@ -241,33 +249,39 @@ window.Quarto = {
 <span id="cb1-6"><a href="#cb1-6"></a><span class="kw">def</span> p_log_prob(x: Float[Array, <span class="st">"batch"</span>]) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
 <span id="cb1-7"><a href="#cb1-7"></a>    p1_log_prob <span class="op">=</span> norm.logpdf(x, loc<span class="op">=-</span><span class="fl">2.0</span>, scale<span class="op">=</span><span class="fl">0.5</span>)</span>
 <span id="cb1-8"><a href="#cb1-8"></a>    p2_log_prob <span class="op">=</span> norm.logpdf(x, loc<span class="op">=</span><span class="fl">2.0</span>, scale<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="cf">return</span> <span class="op">-</span>jnp.log(<span class="dv">2</span>) <span class="op">+</span> jax.nn.logsumexp(jnp.stack([p1_log_prob, p2_log_prob], axis<span class="op">=-</span><span class="dv">1</span>), axis<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb1-10"><a href="#cb1-10"></a></span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="kw">def</span> p_sample(key: PRNGKeyArray, num_samples: <span class="bu">int</span>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
-<span id="cb1-13"><a href="#cb1-13"></a>    k1, k2 <span class="op">=</span> jax.random.split(key)</span>
-<span id="cb1-14"><a href="#cb1-14"></a>    modes <span class="op">=</span> jax.random.choice(k1, jnp.array([<span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.0</span>]), shape<span class="op">=</span>(num_samples,))</span>
-<span id="cb1-15"><a href="#cb1-15"></a>    noise <span class="op">=</span> jax.random.normal(k2, shape<span class="op">=</span>(num_samples,))</span>
-<span id="cb1-16"><a href="#cb1-16"></a>    <span class="cf">return</span> modes <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> noise</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="cf">return</span> <span class="op">-</span>jnp.log(<span class="dv">2</span>) <span class="op">+</span> jax.nn.logsumexp(</span>
+<span id="cb1-10"><a href="#cb1-10"></a>        jnp.stack([p1_log_prob, p2_log_prob], axis<span class="op">=-</span><span class="dv">1</span>), axis<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>    )</span>
+<span id="cb1-12"><a href="#cb1-12"></a></span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="kw">def</span> p_sample(key: PRNGKeyArray, num_samples: <span class="bu">int</span>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    k1, k2 <span class="op">=</span> jax.random.split(key)</span>
+<span id="cb1-16"><a href="#cb1-16"></a>    modes <span class="op">=</span> jax.random.choice(k1, jnp.array([<span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.0</span>]), shape<span class="op">=</span>(num_samples,))</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    noise <span class="op">=</span> jax.random.normal(k2, shape<span class="op">=</span>(num_samples,))</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    <span class="cf">return</span> modes <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> noise</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>Next, we implement the equivalent for <span class="math inline">\(Q\)</span>. Because it is a single Gaussian distribution, the implementation is simpler.</p>
+<p>Next, we implement the equivalent for <span class="math inline">\(Q\)</span>. Because <span class="math inline">\(Q\)</span> is a single Gaussian distribution, the implementation is simpler.</p>
 <div id="18c01fad-0bdb-4b78-a3ee-de4a1e08d91e" class="cell" data-execution_count="2">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># In general, Params is a PyTree but in our example, we can have a stricter type.</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># In general, Params is a PyTree but in our example we can have a stricter type</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>Params <span class="op">=</span> <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]]</span>
 <span id="cb2-3"><a href="#cb2-3"></a></span>
 <span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">def</span> q_log_prob(params: Params, x: Float[Array, <span class="st">"batch"</span>]) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
-<span id="cb2-6"><a href="#cb2-6"></a>    <span class="cf">return</span> norm.logpdf(x, loc<span class="op">=</span>params[<span class="st">"mean"</span>], scale<span class="op">=</span>jnp.exp(params[<span class="st">"log_std"</span>]))</span>
-<span id="cb2-7"><a href="#cb2-7"></a></span>
-<span id="cb2-8"><a href="#cb2-8"></a></span>
-<span id="cb2-9"><a href="#cb2-9"></a><span class="kw">def</span> q_sample(params: Params, key: PRNGKeyArray, num_samples: <span class="bu">int</span>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
-<span id="cb2-10"><a href="#cb2-10"></a>    mean <span class="op">=</span> params[<span class="st">"mean"</span>]</span>
-<span id="cb2-11"><a href="#cb2-11"></a>    std <span class="op">=</span> jnp.exp(params[<span class="st">"log_std"</span>])</span>
-<span id="cb2-12"><a href="#cb2-12"></a>    noise <span class="op">=</span> jax.random.normal(key, shape<span class="op">=</span>(num_samples,))</span>
-<span id="cb2-13"><a href="#cb2-13"></a>    <span class="cf">return</span> mean <span class="op">+</span> noise <span class="op">*</span> std</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">def</span> q_log_prob(</span>
+<span id="cb2-6"><a href="#cb2-6"></a>    params: Params, x: Float[Array, <span class="st">"batch"</span>]</span>
+<span id="cb2-7"><a href="#cb2-7"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="cf">return</span> norm.logpdf(x, loc<span class="op">=</span>params[<span class="st">"mean"</span>], scale<span class="op">=</span>jnp.exp(params[<span class="st">"log_std"</span>]))</span>
+<span id="cb2-9"><a href="#cb2-9"></a></span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="kw">def</span> q_sample(</span>
+<span id="cb2-12"><a href="#cb2-12"></a>    params: Params, key: PRNGKeyArray, num_samples: <span class="bu">int</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
+<span id="cb2-14"><a href="#cb2-14"></a>    mean <span class="op">=</span> params[<span class="st">"mean"</span>]</span>
+<span id="cb2-15"><a href="#cb2-15"></a>    std <span class="op">=</span> jnp.exp(params[<span class="st">"log_std"</span>])</span>
+<span id="cb2-16"><a href="#cb2-16"></a>    noise <span class="op">=</span> jax.random.normal(key, shape<span class="op">=</span>(num_samples,))</span>
+<span id="cb2-17"><a href="#cb2-17"></a>    <span class="cf">return</span> mean <span class="op">+</span> noise <span class="op">*</span> std</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>We are ready to implement the forward KL loss function and reverse KL loss function. First the forward KL divergence looks like:</p>
@@ -276,8 +290,10 @@ window.Quarto = {
 <div id="eed25eaa-893c-4d2c-ae74-0580c2479a24" class="cell" data-execution_count="3">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">def</span> forward_kl_loss(params: Params, x_p: Float[Array, <span class="st">"batch"</span>]) <span class="op">-&gt;</span> Float[Array, <span class="st">""</span>]:</span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="cf">return</span> <span class="op">-</span>jnp.mean(q_log_prob(params, x_p))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">def</span> forward_kl_loss(</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    params: Params, x_p: Float[Array, <span class="st">"batch"</span>]</span>
+<span id="cb3-3"><a href="#cb3-3"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">""</span>]:</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="cf">return</span> <span class="op">-</span>jnp.mean(q_log_prob(params, x_p))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>For reverse KL, we have:</p>
@@ -290,9 +306,11 @@ window.Quarto = {
 <div id="0bf8abba-8186-4298-8202-4c1a34fdcb11" class="cell" data-execution_count="4">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">def</span> reverse_kl_loss(params: Params, key: PRNGKeyArray, num_samples: <span class="bu">int</span>) <span class="op">-&gt;</span> Float[Array, <span class="st">""</span>]:</span>
-<span id="cb4-2"><a href="#cb4-2"></a>    x_q <span class="op">=</span> q_sample(params, key, num_samples)</span>
-<span id="cb4-3"><a href="#cb4-3"></a>    <span class="cf">return</span> <span class="op">-</span>jnp.mean(p_log_prob(x_q)) <span class="op">-</span> params[<span class="st">"log_std"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">def</span> reverse_kl_loss(</span>
+<span id="cb4-2"><a href="#cb4-2"></a>    params: Params, key: PRNGKeyArray, num_samples: <span class="bu">int</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">""</span>]:</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    x_q <span class="op">=</span> q_sample(params, key, num_samples)</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="cf">return</span> <span class="op">-</span>jnp.mean(p_log_prob(x_q)) <span class="op">-</span> params[<span class="st">"log_std"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>Now, let’s capture the training states. We follow the conventions established in Google’s Flax library, and encapsulate the <code>optax.GradientTransformation</code> and create <code>apply_gradients</code> method into the TrainState itself. Because now we want to encapsulate <code>optax.GradientTransformation</code> we need to tell JAX how to serialise and deserialise as PyTree object.</p>
@@ -322,30 +340,38 @@ window.Quarto = {
 <span id="cb5-21"><a href="#cb5-21"></a>        <span class="va">self</span>.opt_state <span class="op">=</span> opt_state</span>
 <span id="cb5-22"><a href="#cb5-22"></a>        <span class="va">self</span>.tx <span class="op">=</span> tx</span>
 <span id="cb5-23"><a href="#cb5-23"></a></span>
-<span id="cb5-24"><a href="#cb5-24"></a>    <span class="kw">def</span> apply_gradients(<span class="va">self</span>, grads: <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]]) <span class="op">-&gt;</span> <span class="st">"TrainState"</span>:</span>
-<span id="cb5-25"><a href="#cb5-25"></a>        <span class="co">"""Applies gradients and returns a completely new state instance."""</span></span>
-<span id="cb5-26"><a href="#cb5-26"></a>        updates, new_opt_state <span class="op">=</span> <span class="va">self</span>.tx.update(grads, <span class="va">self</span>.opt_state, <span class="va">self</span>.params)</span>
-<span id="cb5-27"><a href="#cb5-27"></a>        new_params <span class="op">=</span> optax.apply_updates(<span class="va">self</span>.params, updates)</span>
-<span id="cb5-28"><a href="#cb5-28"></a>        <span class="co"># Cast it back to our strict internal type</span></span>
-<span id="cb5-29"><a href="#cb5-29"></a>        new_params <span class="op">=</span> cast(Params, new_params)</span>
-<span id="cb5-30"><a href="#cb5-30"></a>        <span class="cf">return</span> TrainState(<span class="va">self</span>.step <span class="op">+</span> <span class="dv">1</span>, new_params, new_opt_state, <span class="va">self</span>.tx)</span>
-<span id="cb5-31"><a href="#cb5-31"></a></span>
-<span id="cb5-32"><a href="#cb5-32"></a>    <span class="co"># --- The PyTree Magic ---</span></span>
-<span id="cb5-33"><a href="#cb5-33"></a>    <span class="kw">def</span> tree_flatten(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[Iterable[Any], <span class="bu">tuple</span>[optax.GradientTransformation]]:</span>
-<span id="cb5-34"><a href="#cb5-34"></a>        <span class="co"># We put the arrays in the LEAVES pile for the compiler</span></span>
-<span id="cb5-35"><a href="#cb5-35"></a>        leaves <span class="op">=</span> (<span class="va">self</span>.step, <span class="va">self</span>.params, <span class="va">self</span>.opt_state)</span>
-<span id="cb5-36"><a href="#cb5-36"></a>        <span class="co"># We hide the Python functions in the TREEDEF auxiliary pile</span></span>
-<span id="cb5-37"><a href="#cb5-37"></a>        aux_data <span class="op">=</span> (<span class="va">self</span>.tx,)</span>
-<span id="cb5-38"><a href="#cb5-38"></a>        <span class="cf">return</span> leaves, aux_data</span>
-<span id="cb5-39"><a href="#cb5-39"></a></span>
-<span id="cb5-40"><a href="#cb5-40"></a>    <span class="at">@classmethod</span></span>
-<span id="cb5-41"><a href="#cb5-41"></a>    <span class="kw">def</span> tree_unflatten(</span>
-<span id="cb5-42"><a href="#cb5-42"></a>        cls, aux_data: <span class="bu">tuple</span>[optax.GradientTransformation], leaves: Iterable[Any]</span>
-<span id="cb5-43"><a href="#cb5-43"></a>    ) <span class="op">-&gt;</span> <span class="st">"TrainState"</span>:</span>
-<span id="cb5-44"><a href="#cb5-44"></a>        <span class="co"># JAX uses this to snap the object back together after compilation</span></span>
-<span id="cb5-45"><a href="#cb5-45"></a>        step, params, opt_state <span class="op">=</span> leaves</span>
-<span id="cb5-46"><a href="#cb5-46"></a>        (tx,) <span class="op">=</span> aux_data</span>
-<span id="cb5-47"><a href="#cb5-47"></a>        <span class="cf">return</span> cls(step, params, opt_state, tx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-24"><a href="#cb5-24"></a>    <span class="kw">def</span> apply_gradients(</span>
+<span id="cb5-25"><a href="#cb5-25"></a>        <span class="va">self</span>, grads: <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]]</span>
+<span id="cb5-26"><a href="#cb5-26"></a>    ) <span class="op">-&gt;</span> <span class="st">"TrainState"</span>:</span>
+<span id="cb5-27"><a href="#cb5-27"></a>        <span class="co">"""Applies gradients and returns a completely new state instance."""</span></span>
+<span id="cb5-28"><a href="#cb5-28"></a>        updates, new_opt_state <span class="op">=</span> <span class="va">self</span>.tx.update(</span>
+<span id="cb5-29"><a href="#cb5-29"></a>            grads, <span class="va">self</span>.opt_state, <span class="va">self</span>.params</span>
+<span id="cb5-30"><a href="#cb5-30"></a>        )</span>
+<span id="cb5-31"><a href="#cb5-31"></a>        new_params <span class="op">=</span> optax.apply_updates(<span class="va">self</span>.params, updates)</span>
+<span id="cb5-32"><a href="#cb5-32"></a>        <span class="co"># Cast it back to our strict internal type</span></span>
+<span id="cb5-33"><a href="#cb5-33"></a>        new_params <span class="op">=</span> cast(Params, new_params)</span>
+<span id="cb5-34"><a href="#cb5-34"></a>        <span class="cf">return</span> TrainState(<span class="va">self</span>.step <span class="op">+</span> <span class="dv">1</span>, new_params, new_opt_state, <span class="va">self</span>.tx)</span>
+<span id="cb5-35"><a href="#cb5-35"></a></span>
+<span id="cb5-36"><a href="#cb5-36"></a>    <span class="co"># --- The PyTree Magic ---</span></span>
+<span id="cb5-37"><a href="#cb5-37"></a>    <span class="kw">def</span> tree_flatten(</span>
+<span id="cb5-38"><a href="#cb5-38"></a>        <span class="va">self</span>,</span>
+<span id="cb5-39"><a href="#cb5-39"></a>    ) <span class="op">-&gt;</span> <span class="bu">tuple</span>[Iterable[Any], <span class="bu">tuple</span>[optax.GradientTransformation]]:</span>
+<span id="cb5-40"><a href="#cb5-40"></a>        <span class="co"># We put the arrays in the LEAVES pile for the compiler</span></span>
+<span id="cb5-41"><a href="#cb5-41"></a>        leaves <span class="op">=</span> (<span class="va">self</span>.step, <span class="va">self</span>.params, <span class="va">self</span>.opt_state)</span>
+<span id="cb5-42"><a href="#cb5-42"></a>        <span class="co"># We hide the Python functions in the TREEDEF auxiliary pile</span></span>
+<span id="cb5-43"><a href="#cb5-43"></a>        aux_data <span class="op">=</span> (<span class="va">self</span>.tx,)</span>
+<span id="cb5-44"><a href="#cb5-44"></a>        <span class="cf">return</span> leaves, aux_data</span>
+<span id="cb5-45"><a href="#cb5-45"></a></span>
+<span id="cb5-46"><a href="#cb5-46"></a>    <span class="at">@classmethod</span></span>
+<span id="cb5-47"><a href="#cb5-47"></a>    <span class="kw">def</span> tree_unflatten(</span>
+<span id="cb5-48"><a href="#cb5-48"></a>        cls,</span>
+<span id="cb5-49"><a href="#cb5-49"></a>        aux_data: <span class="bu">tuple</span>[optax.GradientTransformation],</span>
+<span id="cb5-50"><a href="#cb5-50"></a>        leaves: Iterable[Any],</span>
+<span id="cb5-51"><a href="#cb5-51"></a>    ) <span class="op">-&gt;</span> <span class="st">"TrainState"</span>:</span>
+<span id="cb5-52"><a href="#cb5-52"></a>        <span class="co"># JAX uses this to snap the object back together after compilation</span></span>
+<span id="cb5-53"><a href="#cb5-53"></a>        step, params, opt_state <span class="op">=</span> leaves</span>
+<span id="cb5-54"><a href="#cb5-54"></a>        (tx,) <span class="op">=</span> aux_data</span>
+<span id="cb5-55"><a href="#cb5-55"></a>        <span class="cf">return</span> cls(step, params, opt_state, tx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>TIP: here is a Golden Rule of designing your own JAX classes:</p>
@@ -362,53 +388,56 @@ window.Quarto = {
 <span id="cb6-3"><a href="#cb6-3"></a></span>
 <span id="cb6-4"><a href="#cb6-4"></a><span class="at">@jax.jit</span></span>
 <span id="cb6-5"><a href="#cb6-5"></a><span class="kw">def</span> update_fwd(</span>
-<span id="cb6-6"><a href="#cb6-6"></a>    state: TrainState, x_p: Float[Array, <span class="st">"batch"</span>]</span>
-<span id="cb6-7"><a href="#cb6-7"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[TrainState, Float[Array, <span class="st">""</span>]]:</span>
-<span id="cb6-8"><a href="#cb6-8"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(forward_kl_loss)(state.params, x_p)</span>
-<span id="cb6-9"><a href="#cb6-9"></a>    new_state <span class="op">=</span> state.apply_gradients(grads)</span>
-<span id="cb6-10"><a href="#cb6-10"></a>    <span class="cf">return</span> new_state, loss</span>
-<span id="cb6-11"><a href="#cb6-11"></a></span>
+<span id="cb6-6"><a href="#cb6-6"></a>    state: TrainState, </span>
+<span id="cb6-7"><a href="#cb6-7"></a>    x_p: Float[Array, <span class="st">"batch"</span>],</span>
+<span id="cb6-8"><a href="#cb6-8"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[TrainState, Float[Array, <span class="st">""</span>]]:</span>
+<span id="cb6-9"><a href="#cb6-9"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(forward_kl_loss)(state.params, x_p)</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    new_state <span class="op">=</span> state.apply_gradients(grads)</span>
+<span id="cb6-11"><a href="#cb6-11"></a>    <span class="cf">return</span> new_state, loss</span>
 <span id="cb6-12"><a href="#cb6-12"></a></span>
-<span id="cb6-13"><a href="#cb6-13"></a><span class="at">@jax.jit</span></span>
-<span id="cb6-14"><a href="#cb6-14"></a><span class="kw">def</span> update_rev(</span>
-<span id="cb6-15"><a href="#cb6-15"></a>    state: TrainState,</span>
-<span id="cb6-16"><a href="#cb6-16"></a>    key: PRNGKeyArray,</span>
-<span id="cb6-17"><a href="#cb6-17"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[TrainState, Float[Array, <span class="st">""</span>]]:</span>
-<span id="cb6-18"><a href="#cb6-18"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(reverse_kl_loss)(state.params, key, <span class="dv">1000</span>)</span>
-<span id="cb6-19"><a href="#cb6-19"></a>    new_state <span class="op">=</span> state.apply_gradients(grads)</span>
-<span id="cb6-20"><a href="#cb6-20"></a>    <span class="cf">return</span> new_state, loss</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-13"><a href="#cb6-13"></a></span>
+<span id="cb6-14"><a href="#cb6-14"></a><span class="at">@jax.jit</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a><span class="kw">def</span> update_rev(</span>
+<span id="cb6-16"><a href="#cb6-16"></a>    state: TrainState,</span>
+<span id="cb6-17"><a href="#cb6-17"></a>    key: PRNGKeyArray,</span>
+<span id="cb6-18"><a href="#cb6-18"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[TrainState, Float[Array, <span class="st">""</span>]]:</span>
+<span id="cb6-19"><a href="#cb6-19"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(reverse_kl_loss)(state.params, key, <span class="dv">1000</span>)</span>
+<span id="cb6-20"><a href="#cb6-20"></a>    new_state <span class="op">=</span> state.apply_gradients(grads)</span>
+<span id="cb6-21"><a href="#cb6-21"></a>    <span class="cf">return</span> new_state, loss</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>The training loop is relatively straightforward.</p>
 <div id="caa1576b-ffcd-4d66-9779-88f2c3014596" class="cell" data-execution_count="7">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">def</span> training_loop() <span class="op">-&gt;</span> <span class="bu">tuple</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]], <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]]]:</span>
-<span id="cb7-2"><a href="#cb7-2"></a>    <span class="co"># Parameters are just plain dictionaries in JAX</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>    params_fwd <span class="op">=</span> {<span class="st">"mean"</span>: jnp.array(<span class="fl">1.0</span>), <span class="st">"log_std"</span>: jnp.array(<span class="fl">0.0</span>)}</span>
-<span id="cb7-4"><a href="#cb7-4"></a>    params_rev <span class="op">=</span> {<span class="st">"mean"</span>: jnp.array(<span class="fl">1.0</span>), <span class="st">"log_std"</span>: jnp.array(<span class="fl">0.0</span>)}</span>
-<span id="cb7-5"><a href="#cb7-5"></a></span>
-<span id="cb7-6"><a href="#cb7-6"></a>    optimiser <span class="op">=</span> optax.adam(learning_rate<span class="op">=</span><span class="fl">0.05</span>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">def</span> training_loop() <span class="op">-&gt;</span> <span class="bu">tuple</span>[</span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]], <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]]</span>
+<span id="cb7-3"><a href="#cb7-3"></a>]:</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="co"># Parameters are just plain dictionaries in JAX</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    params_fwd <span class="op">=</span> {<span class="st">"mean"</span>: jnp.array(<span class="fl">1.0</span>), <span class="st">"log_std"</span>: jnp.array(<span class="fl">0.0</span>)}</span>
+<span id="cb7-6"><a href="#cb7-6"></a>    params_rev <span class="op">=</span> {<span class="st">"mean"</span>: jnp.array(<span class="fl">1.0</span>), <span class="st">"log_std"</span>: jnp.array(<span class="fl">0.0</span>)}</span>
 <span id="cb7-7"><a href="#cb7-7"></a></span>
-<span id="cb7-8"><a href="#cb7-8"></a>    <span class="co"># Optimisers hold state (like momentum), which we must manage explicitly</span></span>
-<span id="cb7-9"><a href="#cb7-9"></a>    opt_state_fwd <span class="op">=</span> optimiser.init(params_fwd)</span>
-<span id="cb7-10"><a href="#cb7-10"></a>    fwd_train_state <span class="op">=</span> TrainState(<span class="dv">0</span>, params_fwd, opt_state_fwd, optimiser)</span>
-<span id="cb7-11"><a href="#cb7-11"></a>    opt_state_rev <span class="op">=</span> optimiser.init(params_rev)</span>
-<span id="cb7-12"><a href="#cb7-12"></a>    rev_train_state <span class="op">=</span> TrainState(<span class="dv">0</span>, params_rev, opt_state_rev, optimiser)</span>
-<span id="cb7-13"><a href="#cb7-13"></a></span>
-<span id="cb7-14"><a href="#cb7-14"></a>    key <span class="op">=</span> jax.random.PRNGKey(<span class="dv">42</span>)</span>
-<span id="cb7-15"><a href="#cb7-15"></a>    epochs <span class="op">=</span> <span class="dv">1000</span></span>
-<span id="cb7-16"><a href="#cb7-16"></a></span>
-<span id="cb7-17"><a href="#cb7-17"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
-<span id="cb7-18"><a href="#cb7-18"></a>        <span class="co"># We must explicitly split the key every time we need new random numbers</span></span>
-<span id="cb7-19"><a href="#cb7-19"></a>        key, p_key, rev_key <span class="op">=</span> jax.random.split(key, <span class="dv">3</span>)</span>
-<span id="cb7-20"><a href="#cb7-20"></a></span>
-<span id="cb7-21"><a href="#cb7-21"></a>        x_p <span class="op">=</span> p_sample(p_key, <span class="dv">1000</span>)</span>
+<span id="cb7-8"><a href="#cb7-8"></a>    optimiser <span class="op">=</span> optax.adam(learning_rate<span class="op">=</span><span class="fl">0.05</span>)</span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a>    <span class="co"># Optimisers hold state (like momentum), which we must manage explicitly</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a>    opt_state_fwd <span class="op">=</span> optimiser.init(params_fwd)</span>
+<span id="cb7-12"><a href="#cb7-12"></a>    fwd_train_state <span class="op">=</span> TrainState(<span class="dv">0</span>, params_fwd, opt_state_fwd, optimiser)</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    opt_state_rev <span class="op">=</span> optimiser.init(params_rev)</span>
+<span id="cb7-14"><a href="#cb7-14"></a>    rev_train_state <span class="op">=</span> TrainState(<span class="dv">0</span>, params_rev, opt_state_rev, optimiser)</span>
+<span id="cb7-15"><a href="#cb7-15"></a></span>
+<span id="cb7-16"><a href="#cb7-16"></a>    key <span class="op">=</span> jax.random.PRNGKey(<span class="dv">42</span>)</span>
+<span id="cb7-17"><a href="#cb7-17"></a>    epochs <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a></span>
+<span id="cb7-19"><a href="#cb7-19"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
+<span id="cb7-20"><a href="#cb7-20"></a>        <span class="co"># We must explicitly split the key every time we need new random numbers</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a>        key, p_key, rev_key <span class="op">=</span> jax.random.split(key, <span class="dv">3</span>)</span>
 <span id="cb7-22"><a href="#cb7-22"></a></span>
-<span id="cb7-23"><a href="#cb7-23"></a>        fwd_train_state, _ <span class="op">=</span> update_fwd(fwd_train_state, x_p)</span>
-<span id="cb7-24"><a href="#cb7-24"></a>        rev_train_state, _ <span class="op">=</span> update_rev(rev_train_state, rev_key)</span>
-<span id="cb7-25"><a href="#cb7-25"></a></span>
-<span id="cb7-26"><a href="#cb7-26"></a>    <span class="cf">return</span> fwd_train_state.params, rev_train_state.params</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-23"><a href="#cb7-23"></a>        x_p <span class="op">=</span> p_sample(p_key, <span class="dv">1000</span>)</span>
+<span id="cb7-24"><a href="#cb7-24"></a></span>
+<span id="cb7-25"><a href="#cb7-25"></a>        fwd_train_state, _ <span class="op">=</span> update_fwd(fwd_train_state, x_p)</span>
+<span id="cb7-26"><a href="#cb7-26"></a>        rev_train_state, _ <span class="op">=</span> update_rev(rev_train_state, rev_key)</span>
+<span id="cb7-27"><a href="#cb7-27"></a></span>
+<span id="cb7-28"><a href="#cb7-28"></a>    <span class="cf">return</span> fwd_train_state.params, rev_train_state.params</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>Let’s run the code and plot the results!</p>
@@ -427,16 +456,22 @@ window.Quarto = {
 <span id="cb8-10"><a href="#cb8-10"></a>y_q_rev <span class="op">=</span> jnp.exp(q_log_prob(params_rev, x))</span>
 <span id="cb8-11"><a href="#cb8-11"></a></span>
 <span id="cb8-12"><a href="#cb8-12"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
-<span id="cb8-13"><a href="#cb8-13"></a>plt.plot(x, y_p, label<span class="op">=</span><span class="st">"True P (Bimodal)"</span>, color<span class="op">=</span><span class="st">"black"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, linestyle<span class="op">=</span><span class="st">"--"</span>)</span>
-<span id="cb8-14"><a href="#cb8-14"></a>plt.plot(x, y_q_fwd, label<span class="op">=</span><span class="st">"Q (Forward KL / Mean-Seeking)"</span>, color<span class="op">=</span><span class="st">"blue"</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
-<span id="cb8-15"><a href="#cb8-15"></a>plt.plot(x, y_q_rev, label<span class="op">=</span><span class="st">"Q (Reverse KL / Mode-Seeking)"</span>, color<span class="op">=</span><span class="st">"red"</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
-<span id="cb8-16"><a href="#cb8-16"></a></span>
-<span id="cb8-17"><a href="#cb8-17"></a>plt.title(<span class="st">"Forward vs Reverse KL Divergence"</span>)</span>
-<span id="cb8-18"><a href="#cb8-18"></a>plt.xlabel(<span class="st">"x"</span>)</span>
-<span id="cb8-19"><a href="#cb8-19"></a>plt.ylabel(<span class="st">"Probability Density"</span>)</span>
-<span id="cb8-20"><a href="#cb8-20"></a>plt.legend()</span>
-<span id="cb8-21"><a href="#cb8-21"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb8-22"><a href="#cb8-22"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-13"><a href="#cb8-13"></a>plt.plot(</span>
+<span id="cb8-14"><a href="#cb8-14"></a>    x, y_p, label<span class="op">=</span><span class="st">"True P (Bimodal)"</span>, color<span class="op">=</span><span class="st">"black"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, linestyle<span class="op">=</span><span class="st">"--"</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a>)</span>
+<span id="cb8-16"><a href="#cb8-16"></a>plt.plot(</span>
+<span id="cb8-17"><a href="#cb8-17"></a>    x, y_q_fwd, label<span class="op">=</span><span class="st">"Q (Forward KL / Mean-Seeking)"</span>, color<span class="op">=</span><span class="st">"blue"</span>, linewidth<span class="op">=</span><span class="dv">2</span></span>
+<span id="cb8-18"><a href="#cb8-18"></a>)</span>
+<span id="cb8-19"><a href="#cb8-19"></a>plt.plot(</span>
+<span id="cb8-20"><a href="#cb8-20"></a>    x, y_q_rev, label<span class="op">=</span><span class="st">"Q (Reverse KL / Mode-Seeking)"</span>, color<span class="op">=</span><span class="st">"red"</span>, linewidth<span class="op">=</span><span class="dv">2</span></span>
+<span id="cb8-21"><a href="#cb8-21"></a>)</span>
+<span id="cb8-22"><a href="#cb8-22"></a></span>
+<span id="cb8-23"><a href="#cb8-23"></a>plt.title(<span class="st">"Forward vs Reverse KL Divergence"</span>)</span>
+<span id="cb8-24"><a href="#cb8-24"></a>plt.xlabel(<span class="st">"x"</span>)</span>
+<span id="cb8-25"><a href="#cb8-25"></a>plt.ylabel(<span class="st">"Probability Density"</span>)</span>
+<span id="cb8-26"><a href="#cb8-26"></a>plt.legend()</span>
+<span id="cb8-27"><a href="#cb8-27"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb8-28"><a href="#cb8-28"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-display">
 <div>
