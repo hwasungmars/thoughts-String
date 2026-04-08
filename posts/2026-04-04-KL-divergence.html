@@ -179,10 +179,10 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#motivation-and-definition" id="toc-motivation-and-definition" class="nav-link active" data-scroll-target="#motivation-and-definition"><span class="header-section-number">0.1</span> Motivation and definition</a></li>
-  <li><a href="#example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" id="toc-example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" class="nav-link" data-scroll-target="#example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture"><span class="header-section-number">0.2</span> Example: Fitting a single Gaussian to a Bimodal Gaussian Mixture</a></li>
-  <li><a href="#jax-implementation" id="toc-jax-implementation" class="nav-link" data-scroll-target="#jax-implementation"><span class="header-section-number">0.3</span> JAX implementation</a></li>
-  <li><a href="#final-thoughts" id="toc-final-thoughts" class="nav-link" data-scroll-target="#final-thoughts"><span class="header-section-number">1</span> Final thoughts</a></li>
+  <li><a href="#motivation-and-definition" id="toc-motivation-and-definition" class="nav-link active" data-scroll-target="#motivation-and-definition"><span class="header-section-number">1</span> Motivation and definition</a></li>
+  <li><a href="#example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" id="toc-example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" class="nav-link" data-scroll-target="#example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture"><span class="header-section-number">2</span> Example: Fitting a single Gaussian to a Bimodal Gaussian Mixture</a></li>
+  <li><a href="#jax-implementation" id="toc-jax-implementation" class="nav-link" data-scroll-target="#jax-implementation"><span class="header-section-number">3</span> JAX implementation</a></li>
+  <li><a href="#final-thoughts" id="toc-final-thoughts" class="nav-link" data-scroll-target="#final-thoughts"><span class="header-section-number">4</span> Final thoughts</a></li>
   </ul>
 </nav>
     </div>
@@ -208,8 +208,8 @@ window.Quarto = {
 </header>
 
 
-<section id="motivation-and-definition" class="level2" data-number="0.1">
-<h2 data-number="0.1" class="anchored" data-anchor-id="motivation-and-definition"><span class="header-section-number">0.1</span> Motivation and definition</h2>
+<section id="motivation-and-definition" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="motivation-and-definition"><span class="header-section-number">1</span> Motivation and definition</h2>
 <p>KL-divergence is perhaps the most popular <span class="math inline">\(f\)</span>-divergence. KL divergence can be thought of as the average number of extra bytes it takes to encode information from <span class="math inline">\(P\)</span> using <span class="math inline">\(Q\)</span>. Concretely, it is defined as:</p>
 <p><span class="math display">\[D_{KL}(P || Q) := -p_i\log q_i + p_i\log p_i\]</span></p>
 <p>Here, I have used Einstein’s summation notation and <span class="math inline">\(p_i\)</span> as short hand for <span class="math inline">\(p(x_i)\)</span>. In this article, I will work with discrete probability distributions to keep the maths simple. The same argument can be applied to continuous probability distributions as well.</p>
@@ -220,14 +220,14 @@ window.Quarto = {
 </ul>
 <p>Both forward and reverse KL are used as loss functions in model training. The most famous cases would be forward KL being used in soft distillation and reverse KL being used in an RL setting. The model <span class="math inline">\(Q\)</span> which we train behaves quite differently depending on whether we use the forward KL or reverse KL as the loss function.</p>
 </section>
-<section id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" class="level2" data-number="0.2">
-<h2 data-number="0.2" class="anchored" data-anchor-id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture"><span class="header-section-number">0.2</span> Example: Fitting a single Gaussian to a Bimodal Gaussian Mixture</h2>
+<section id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture"><span class="header-section-number">2</span> Example: Fitting a single Gaussian to a Bimodal Gaussian Mixture</h2>
 <p>Consider that we have a bimodal Gaussian mixture <span class="math inline">\(P\)</span> and we want to fit it with a single Gaussian distribution <span class="math inline">\(Q\)</span>. Depending on whether we use forward KL loss function or reverse KL loss function, we get two very contrasting results.</p>
 <p>Here is how it works conceptually: * <strong>True Distribution (<span class="math inline">\(P\)</span>):</strong> A mixture of two Gaussians (e.g., one peak at <span class="math inline">\(x=-2\)</span> and another at <span class="math inline">\(x=2\)</span>). * <strong>Model Distribution (<span class="math inline">\(Q\)</span>):</strong> A single Gaussian parameterized by its mean (<span class="math inline">\(\mu\)</span>) and standard deviation (<span class="math inline">\(\sigma\)</span>).</p>
 <p>When you train <span class="math inline">\(Q\)</span> to match <span class="math inline">\(P\)</span>: 1. <strong>Forward KL (<span class="math inline">\(D_{KL}(P||Q)\)</span> - Mean-Seeking):</strong> The model <span class="math inline">\(Q\)</span> must avoid making <span class="math inline">\(q_i\)</span> small where <span class="math inline">\(p_i\)</span> is large (since <span class="math inline">\(p_i \log(p_i/q_i)\)</span> blows up if <span class="math inline">\(q_i \to 0\)</span>). Therefore, the single Gaussian spreads out wide to cover <em>both</em> peaks, placing its mean in the middle (around <span class="math inline">\(x=0\)</span>) even though <span class="math inline">\(P\)</span> has very low probability there. 2. <strong>Reverse KL (<span class="math inline">\(D_{KL}(Q||P)\)</span> - Mode-Seeking):</strong> The model <span class="math inline">\(Q\)</span> must avoid placing probability mass where <span class="math inline">\(P\)</span> has none (since <span class="math inline">\(q_i \log(q_i/p_i)\)</span> blows up if <span class="math inline">\(p_i \to 0\)</span>). To avoid the “valley” between the two peaks, the single Gaussian collapses onto just <em>one</em> of the peaks and completely ignores the other.</p>
 </section>
-<section id="jax-implementation" class="level2" data-number="0.3">
-<h2 data-number="0.3" class="anchored" data-anchor-id="jax-implementation"><span class="header-section-number">0.3</span> JAX implementation</h2>
+<section id="jax-implementation" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="jax-implementation"><span class="header-section-number">3</span> JAX implementation</h2>
 <p>Let’s use JAX to implement this and visualise this using matplotlib. First let’s implement <span class="math inline">\(P\)</span> and sampling of <span class="math inline">\(P\)</span>. We use log prob to achieve numerical stability.</p>
 <p><span class="math display">\[\log P = \log (\exp \log N(-2.0, 0.5) + \exp \log N(2.0, 0.5)) - \log 2\]</span></p>
 <div id="6b7cb32a-7d51-4dce-afb0-35791318ee27" class="cell" data-execution_count="1">
@@ -447,8 +447,8 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="final-thoughts" class="level1" data-number="1">
-<h1 data-number="1"><span class="header-section-number">1</span> Final thoughts</h1>
+<section id="final-thoughts" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="final-thoughts"><span class="header-section-number">4</span> Final thoughts</h2>
 <p>Ok, so what have we done? We have started off with a model which is a Gaussian and tried to fit it to the bimodal Gaussian mixture. The single Gaussian will never be able to fit the bimodal Gaussian but depending on whether we use the forward KL or the reverse KL we get different behaviours.</p>
 <p>For forward KL, the final Gaussian model we get tries to cover all of the bimodal Gaussian mixture, as seen by the blue line over the black dashed bimodal mixture. This is why it is called mean seeking; it tries to cover all bases.</p>
 <p>In contrast, reverse KL makes the final Gaussian model focus around one of the bimodal mixture’s peaks, as seen by the red line over the mean 2 peak. This is why reverse KL is called mode seeking.</p>
