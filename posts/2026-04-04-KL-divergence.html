@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.36">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -74,7 +74,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-3ab3c25880d787e734ee9f73ca06a7d1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -213,12 +213,12 @@ window.Quarto = {
 <p>KL-divergence is perhaps the most popular <span class="math inline">\(f\)</span>-divergence. KL divergence can be thought of as the average number of extra bytes it takes to encode information from <span class="math inline">\(P\)</span> using <span class="math inline">\(Q\)</span>. Concretely, it is defined as:</p>
 <p><span class="math display">\[D_{KL}(P || Q) := -p_i\log q_i + p_i\log p_i\]</span></p>
 <p>Here, I have used Einstein’s summation notation and <span class="math inline">\(p_i\)</span> as short hand for <span class="math inline">\(p(x_i)\)</span>. In this article, I will work with discrete probability distributions to keep the maths simple. The same argument can be applied to continuous probability distributions as well.</p>
-<p>In AI/ML, <span class="math inline">\(P\)</span> is the true distribution and <span class="math inline">\(Q\)</span> is the approximate distribution. One thing to note is that KL-divergence is not symmetric: <span class="math inline">\(D_{KL}(P || Q) \ne D_{KL}(Q || P)\)</span>. To make this distinction explicit, <span class="math inline">\(D_{KL}(P || Q)\)</span> is called the forward-KL and <span class="math inline">\(D_{KL}(Q || P)\)</span> is the reverse KL. Here are some concrete examples of <span class="math inline">\(P\)</span> and <span class="math inline">\(Q\)</span>:</p>
+<p>In AI/ML, <span class="math inline">\(P\)</span> is the true distribution and <span class="math inline">\(Q\)</span> is the approximate distribution. Here are some concrete examples of <span class="math inline">\(P\)</span> and <span class="math inline">\(Q\)</span>:</p>
 <ul>
 <li><span class="math inline">\(P\)</span> is the probability distribution of human language, and <span class="math inline">\(Q\)</span> is the probability distribution of our model.</li>
 <li><span class="math inline">\(P\)</span> is the teacher model, and <span class="math inline">\(Q\)</span> is the student model.</li>
 </ul>
-<p>Both forward and reverse KL are used as loss functions in model training. The most famous cases would be forward KL being used in soft distillation and reverse KL being used in an RL setting. The model <span class="math inline">\(Q\)</span> which we train behaves quite differently depending on whether we use the forward KL or reverse KL as the loss function.</p>
+<p>One thing to note is that KL-divergence is not symmetric: <span class="math inline">\(D_{KL}(P || Q) \ne D_{KL}(Q || P)\)</span>. To make this distinction explicit, <span class="math inline">\(D_{KL}(P || Q)\)</span> is called the forward-KL and <span class="math inline">\(D_{KL}(Q || P)\)</span> is the reverse KL. Both forward and reverse KL are used as loss functions in model training. The most famous cases would be forward KL being used in soft distillation and reverse KL being used in an RL setting. The model <span class="math inline">\(Q\)</span> which we train behaves quite differently depending on whether we use the forward KL or reverse KL as the loss function.</p>
 </section>
 <section id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="example-fitting-a-single-gaussian-to-a-bimodal-gaussian-mixture"><span class="header-section-number">2</span> Example: Fitting a single Gaussian to a Bimodal Gaussian Mixture</h2>
@@ -256,9 +256,11 @@ window.Quarto = {
 <span id="cb1-13"><a href="#cb1-13"></a></span>
 <span id="cb1-14"><a href="#cb1-14"></a><span class="kw">def</span> p_sample(key: PRNGKeyArray, num_samples: <span class="bu">int</span>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
 <span id="cb1-15"><a href="#cb1-15"></a>    k1, k2 <span class="op">=</span> jax.random.split(key)</span>
-<span id="cb1-16"><a href="#cb1-16"></a>    modes <span class="op">=</span> jax.random.choice(k1, jnp.array([<span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.0</span>]), shape<span class="op">=</span>(num_samples,))</span>
-<span id="cb1-17"><a href="#cb1-17"></a>    noise <span class="op">=</span> jax.random.normal(k2, shape<span class="op">=</span>(num_samples,))</span>
-<span id="cb1-18"><a href="#cb1-18"></a>    <span class="cf">return</span> modes <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> noise</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-16"><a href="#cb1-16"></a>    modes <span class="op">=</span> jax.random.choice(</span>
+<span id="cb1-17"><a href="#cb1-17"></a>        k1, jnp.array([<span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.0</span>]), shape<span class="op">=</span>(num_samples,)</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    )</span>
+<span id="cb1-19"><a href="#cb1-19"></a>    noise <span class="op">=</span> jax.random.normal(k2, shape<span class="op">=</span>(num_samples,))</span>
+<span id="cb1-20"><a href="#cb1-20"></a>    <span class="cf">return</span> modes <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> noise</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>Next, we implement the equivalent for <span class="math inline">\(Q\)</span>. Because <span class="math inline">\(Q\)</span> is a single Gaussian distribution, the implementation is simpler.</p>
@@ -272,16 +274,18 @@ window.Quarto = {
 <span id="cb2-5"><a href="#cb2-5"></a><span class="kw">def</span> q_log_prob(</span>
 <span id="cb2-6"><a href="#cb2-6"></a>    params: Params, x: Float[Array, <span class="st">"batch"</span>]</span>
 <span id="cb2-7"><a href="#cb2-7"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
-<span id="cb2-8"><a href="#cb2-8"></a>    <span class="cf">return</span> norm.logpdf(x, loc<span class="op">=</span>params[<span class="st">"mean"</span>], scale<span class="op">=</span>jnp.exp(params[<span class="st">"log_std"</span>]))</span>
-<span id="cb2-9"><a href="#cb2-9"></a></span>
-<span id="cb2-10"><a href="#cb2-10"></a></span>
-<span id="cb2-11"><a href="#cb2-11"></a><span class="kw">def</span> q_sample(</span>
-<span id="cb2-12"><a href="#cb2-12"></a>    params: Params, key: PRNGKeyArray, num_samples: <span class="bu">int</span></span>
-<span id="cb2-13"><a href="#cb2-13"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
-<span id="cb2-14"><a href="#cb2-14"></a>    mean <span class="op">=</span> params[<span class="st">"mean"</span>]</span>
-<span id="cb2-15"><a href="#cb2-15"></a>    std <span class="op">=</span> jnp.exp(params[<span class="st">"log_std"</span>])</span>
-<span id="cb2-16"><a href="#cb2-16"></a>    noise <span class="op">=</span> jax.random.normal(key, shape<span class="op">=</span>(num_samples,))</span>
-<span id="cb2-17"><a href="#cb2-17"></a>    <span class="cf">return</span> mean <span class="op">+</span> noise <span class="op">*</span> std</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="cf">return</span> norm.logpdf(</span>
+<span id="cb2-9"><a href="#cb2-9"></a>        x, loc<span class="op">=</span>params[<span class="st">"mean"</span>], scale<span class="op">=</span>jnp.exp(params[<span class="st">"log_std"</span>])</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    )</span>
+<span id="cb2-11"><a href="#cb2-11"></a></span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="kw">def</span> q_sample(</span>
+<span id="cb2-14"><a href="#cb2-14"></a>    params: Params, key: PRNGKeyArray, num_samples: <span class="bu">int</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a>) <span class="op">-&gt;</span> Float[Array, <span class="st">"batch"</span>]:</span>
+<span id="cb2-16"><a href="#cb2-16"></a>    mean <span class="op">=</span> params[<span class="st">"mean"</span>]</span>
+<span id="cb2-17"><a href="#cb2-17"></a>    std <span class="op">=</span> jnp.exp(params[<span class="st">"log_std"</span>])</span>
+<span id="cb2-18"><a href="#cb2-18"></a>    noise <span class="op">=</span> jax.random.normal(key, shape<span class="op">=</span>(num_samples,))</span>
+<span id="cb2-19"><a href="#cb2-19"></a>    <span class="cf">return</span> mean <span class="op">+</span> noise <span class="op">*</span> std</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>We are ready to implement the forward KL loss function and reverse KL loss function. First the forward KL divergence looks like:</p>
@@ -350,28 +354,30 @@ window.Quarto = {
 <span id="cb5-31"><a href="#cb5-31"></a>        new_params <span class="op">=</span> optax.apply_updates(<span class="va">self</span>.params, updates)</span>
 <span id="cb5-32"><a href="#cb5-32"></a>        <span class="co"># Cast it back to our strict internal type</span></span>
 <span id="cb5-33"><a href="#cb5-33"></a>        new_params <span class="op">=</span> cast(Params, new_params)</span>
-<span id="cb5-34"><a href="#cb5-34"></a>        <span class="cf">return</span> TrainState(<span class="va">self</span>.step <span class="op">+</span> <span class="dv">1</span>, new_params, new_opt_state, <span class="va">self</span>.tx)</span>
-<span id="cb5-35"><a href="#cb5-35"></a></span>
-<span id="cb5-36"><a href="#cb5-36"></a>    <span class="co"># --- The PyTree Magic ---</span></span>
-<span id="cb5-37"><a href="#cb5-37"></a>    <span class="kw">def</span> tree_flatten(</span>
-<span id="cb5-38"><a href="#cb5-38"></a>        <span class="va">self</span>,</span>
-<span id="cb5-39"><a href="#cb5-39"></a>    ) <span class="op">-&gt;</span> <span class="bu">tuple</span>[Iterable[Any], <span class="bu">tuple</span>[optax.GradientTransformation]]:</span>
-<span id="cb5-40"><a href="#cb5-40"></a>        <span class="co"># We put the arrays in the LEAVES pile for the compiler</span></span>
-<span id="cb5-41"><a href="#cb5-41"></a>        leaves <span class="op">=</span> (<span class="va">self</span>.step, <span class="va">self</span>.params, <span class="va">self</span>.opt_state)</span>
-<span id="cb5-42"><a href="#cb5-42"></a>        <span class="co"># We hide the Python functions in the TREEDEF auxiliary pile</span></span>
-<span id="cb5-43"><a href="#cb5-43"></a>        aux_data <span class="op">=</span> (<span class="va">self</span>.tx,)</span>
-<span id="cb5-44"><a href="#cb5-44"></a>        <span class="cf">return</span> leaves, aux_data</span>
-<span id="cb5-45"><a href="#cb5-45"></a></span>
-<span id="cb5-46"><a href="#cb5-46"></a>    <span class="at">@classmethod</span></span>
-<span id="cb5-47"><a href="#cb5-47"></a>    <span class="kw">def</span> tree_unflatten(</span>
-<span id="cb5-48"><a href="#cb5-48"></a>        cls,</span>
-<span id="cb5-49"><a href="#cb5-49"></a>        aux_data: <span class="bu">tuple</span>[optax.GradientTransformation],</span>
-<span id="cb5-50"><a href="#cb5-50"></a>        leaves: Iterable[Any],</span>
-<span id="cb5-51"><a href="#cb5-51"></a>    ) <span class="op">-&gt;</span> <span class="st">"TrainState"</span>:</span>
-<span id="cb5-52"><a href="#cb5-52"></a>        <span class="co"># JAX uses this to snap the object back together after compilation</span></span>
-<span id="cb5-53"><a href="#cb5-53"></a>        step, params, opt_state <span class="op">=</span> leaves</span>
-<span id="cb5-54"><a href="#cb5-54"></a>        (tx,) <span class="op">=</span> aux_data</span>
-<span id="cb5-55"><a href="#cb5-55"></a>        <span class="cf">return</span> cls(step, params, opt_state, tx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-34"><a href="#cb5-34"></a>        <span class="cf">return</span> TrainState(</span>
+<span id="cb5-35"><a href="#cb5-35"></a>            <span class="va">self</span>.step <span class="op">+</span> <span class="dv">1</span>, new_params, new_opt_state, <span class="va">self</span>.tx</span>
+<span id="cb5-36"><a href="#cb5-36"></a>        )</span>
+<span id="cb5-37"><a href="#cb5-37"></a></span>
+<span id="cb5-38"><a href="#cb5-38"></a>    <span class="co"># --- The PyTree Magic ---</span></span>
+<span id="cb5-39"><a href="#cb5-39"></a>    <span class="kw">def</span> tree_flatten(</span>
+<span id="cb5-40"><a href="#cb5-40"></a>        <span class="va">self</span>,</span>
+<span id="cb5-41"><a href="#cb5-41"></a>    ) <span class="op">-&gt;</span> <span class="bu">tuple</span>[Iterable[Any], <span class="bu">tuple</span>[optax.GradientTransformation]]:</span>
+<span id="cb5-42"><a href="#cb5-42"></a>        <span class="co"># We put the arrays in the LEAVES pile for the compiler</span></span>
+<span id="cb5-43"><a href="#cb5-43"></a>        leaves <span class="op">=</span> (<span class="va">self</span>.step, <span class="va">self</span>.params, <span class="va">self</span>.opt_state)</span>
+<span id="cb5-44"><a href="#cb5-44"></a>        <span class="co"># We hide the Python functions in the TREEDEF auxiliary pile</span></span>
+<span id="cb5-45"><a href="#cb5-45"></a>        aux_data <span class="op">=</span> (<span class="va">self</span>.tx,)</span>
+<span id="cb5-46"><a href="#cb5-46"></a>        <span class="cf">return</span> leaves, aux_data</span>
+<span id="cb5-47"><a href="#cb5-47"></a></span>
+<span id="cb5-48"><a href="#cb5-48"></a>    <span class="at">@classmethod</span></span>
+<span id="cb5-49"><a href="#cb5-49"></a>    <span class="kw">def</span> tree_unflatten(</span>
+<span id="cb5-50"><a href="#cb5-50"></a>        cls,</span>
+<span id="cb5-51"><a href="#cb5-51"></a>        aux_data: <span class="bu">tuple</span>[optax.GradientTransformation],</span>
+<span id="cb5-52"><a href="#cb5-52"></a>        leaves: Iterable[Any],</span>
+<span id="cb5-53"><a href="#cb5-53"></a>    ) <span class="op">-&gt;</span> <span class="st">"TrainState"</span>:</span>
+<span id="cb5-54"><a href="#cb5-54"></a>        <span class="co"># JAX uses this to snap the object back together after compilation</span></span>
+<span id="cb5-55"><a href="#cb5-55"></a>        step, params, opt_state <span class="op">=</span> leaves</span>
+<span id="cb5-56"><a href="#cb5-56"></a>        (tx,) <span class="op">=</span> aux_data</span>
+<span id="cb5-57"><a href="#cb5-57"></a>        <span class="cf">return</span> cls(step, params, opt_state, tx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>TIP: here is a Golden Rule of designing your own JAX classes:</p>
@@ -388,7 +394,7 @@ window.Quarto = {
 <span id="cb6-3"><a href="#cb6-3"></a></span>
 <span id="cb6-4"><a href="#cb6-4"></a><span class="at">@jax.jit</span></span>
 <span id="cb6-5"><a href="#cb6-5"></a><span class="kw">def</span> update_fwd(</span>
-<span id="cb6-6"><a href="#cb6-6"></a>    state: TrainState, </span>
+<span id="cb6-6"><a href="#cb6-6"></a>    state: TrainState,</span>
 <span id="cb6-7"><a href="#cb6-7"></a>    x_p: Float[Array, <span class="st">"batch"</span>],</span>
 <span id="cb6-8"><a href="#cb6-8"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[TrainState, Float[Array, <span class="st">""</span>]]:</span>
 <span id="cb6-9"><a href="#cb6-9"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(forward_kl_loss)(state.params, x_p)</span>
@@ -401,9 +407,11 @@ window.Quarto = {
 <span id="cb6-16"><a href="#cb6-16"></a>    state: TrainState,</span>
 <span id="cb6-17"><a href="#cb6-17"></a>    key: PRNGKeyArray,</span>
 <span id="cb6-18"><a href="#cb6-18"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[TrainState, Float[Array, <span class="st">""</span>]]:</span>
-<span id="cb6-19"><a href="#cb6-19"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(reverse_kl_loss)(state.params, key, <span class="dv">1000</span>)</span>
-<span id="cb6-20"><a href="#cb6-20"></a>    new_state <span class="op">=</span> state.apply_gradients(grads)</span>
-<span id="cb6-21"><a href="#cb6-21"></a>    <span class="cf">return</span> new_state, loss</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-19"><a href="#cb6-19"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(reverse_kl_loss)(</span>
+<span id="cb6-20"><a href="#cb6-20"></a>        state.params, key, <span class="dv">1000</span></span>
+<span id="cb6-21"><a href="#cb6-21"></a>    )</span>
+<span id="cb6-22"><a href="#cb6-22"></a>    new_state <span class="op">=</span> state.apply_gradients(grads)</span>
+<span id="cb6-23"><a href="#cb6-23"></a>    <span class="cf">return</span> new_state, loss</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>The training loop is relatively straightforward.</p>
@@ -457,21 +465,34 @@ window.Quarto = {
 <span id="cb8-11"><a href="#cb8-11"></a></span>
 <span id="cb8-12"><a href="#cb8-12"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
 <span id="cb8-13"><a href="#cb8-13"></a>plt.plot(</span>
-<span id="cb8-14"><a href="#cb8-14"></a>    x, y_p, label<span class="op">=</span><span class="st">"True P (Bimodal)"</span>, color<span class="op">=</span><span class="st">"black"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, linestyle<span class="op">=</span><span class="st">"--"</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a>)</span>
-<span id="cb8-16"><a href="#cb8-16"></a>plt.plot(</span>
-<span id="cb8-17"><a href="#cb8-17"></a>    x, y_q_fwd, label<span class="op">=</span><span class="st">"Q (Forward KL / Mean-Seeking)"</span>, color<span class="op">=</span><span class="st">"blue"</span>, linewidth<span class="op">=</span><span class="dv">2</span></span>
-<span id="cb8-18"><a href="#cb8-18"></a>)</span>
-<span id="cb8-19"><a href="#cb8-19"></a>plt.plot(</span>
-<span id="cb8-20"><a href="#cb8-20"></a>    x, y_q_rev, label<span class="op">=</span><span class="st">"Q (Reverse KL / Mode-Seeking)"</span>, color<span class="op">=</span><span class="st">"red"</span>, linewidth<span class="op">=</span><span class="dv">2</span></span>
-<span id="cb8-21"><a href="#cb8-21"></a>)</span>
-<span id="cb8-22"><a href="#cb8-22"></a></span>
-<span id="cb8-23"><a href="#cb8-23"></a>plt.title(<span class="st">"Forward vs Reverse KL Divergence"</span>)</span>
-<span id="cb8-24"><a href="#cb8-24"></a>plt.xlabel(<span class="st">"x"</span>)</span>
-<span id="cb8-25"><a href="#cb8-25"></a>plt.ylabel(<span class="st">"Probability Density"</span>)</span>
-<span id="cb8-26"><a href="#cb8-26"></a>plt.legend()</span>
-<span id="cb8-27"><a href="#cb8-27"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb8-28"><a href="#cb8-28"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-14"><a href="#cb8-14"></a>    x,</span>
+<span id="cb8-15"><a href="#cb8-15"></a>    y_p,</span>
+<span id="cb8-16"><a href="#cb8-16"></a>    label<span class="op">=</span><span class="st">"True P (Bimodal)"</span>,</span>
+<span id="cb8-17"><a href="#cb8-17"></a>    color<span class="op">=</span><span class="st">"black"</span>,</span>
+<span id="cb8-18"><a href="#cb8-18"></a>    linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb8-19"><a href="#cb8-19"></a>    linestyle<span class="op">=</span><span class="st">"--"</span>,</span>
+<span id="cb8-20"><a href="#cb8-20"></a>)</span>
+<span id="cb8-21"><a href="#cb8-21"></a>plt.plot(</span>
+<span id="cb8-22"><a href="#cb8-22"></a>    x,</span>
+<span id="cb8-23"><a href="#cb8-23"></a>    y_q_fwd,</span>
+<span id="cb8-24"><a href="#cb8-24"></a>    label<span class="op">=</span><span class="st">"Q (Forward KL / Mean-Seeking)"</span>,</span>
+<span id="cb8-25"><a href="#cb8-25"></a>    color<span class="op">=</span><span class="st">"blue"</span>,</span>
+<span id="cb8-26"><a href="#cb8-26"></a>    linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb8-27"><a href="#cb8-27"></a>)</span>
+<span id="cb8-28"><a href="#cb8-28"></a>plt.plot(</span>
+<span id="cb8-29"><a href="#cb8-29"></a>    x,</span>
+<span id="cb8-30"><a href="#cb8-30"></a>    y_q_rev,</span>
+<span id="cb8-31"><a href="#cb8-31"></a>    label<span class="op">=</span><span class="st">"Q (Reverse KL / Mode-Seeking)"</span>,</span>
+<span id="cb8-32"><a href="#cb8-32"></a>    color<span class="op">=</span><span class="st">"red"</span>,</span>
+<span id="cb8-33"><a href="#cb8-33"></a>    linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb8-34"><a href="#cb8-34"></a>)</span>
+<span id="cb8-35"><a href="#cb8-35"></a></span>
+<span id="cb8-36"><a href="#cb8-36"></a>plt.title(<span class="st">"Forward vs Reverse KL Divergence"</span>)</span>
+<span id="cb8-37"><a href="#cb8-37"></a>plt.xlabel(<span class="st">"x"</span>)</span>
+<span id="cb8-38"><a href="#cb8-38"></a>plt.ylabel(<span class="st">"Probability Density"</span>)</span>
+<span id="cb8-39"><a href="#cb8-39"></a>plt.legend()</span>
+<span id="cb8-40"><a href="#cb8-40"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb8-41"><a href="#cb8-41"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-display">
 <div>
