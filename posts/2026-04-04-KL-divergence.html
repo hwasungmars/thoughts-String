@@ -267,7 +267,7 @@ window.Quarto = {
 <div id="18c01fad-0bdb-4b78-a3ee-de4a1e08d91e" class="cell" data-execution_count="2">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># In general, Params is a PyTree but in our example we can have a stricter type</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Params is a PyTree type but in our example we can restrict it further</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>Params <span class="op">=</span> <span class="bu">dict</span>[<span class="bu">str</span>, Float[Array, <span class="st">""</span>]]</span>
 <span id="cb2-3"><a href="#cb2-3"></a></span>
 <span id="cb2-4"><a href="#cb2-4"></a></span>
@@ -437,15 +437,14 @@ window.Quarto = {
 <span id="cb7-17"><a href="#cb7-17"></a>    epochs <span class="op">=</span> <span class="dv">1000</span></span>
 <span id="cb7-18"><a href="#cb7-18"></a></span>
 <span id="cb7-19"><a href="#cb7-19"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
-<span id="cb7-20"><a href="#cb7-20"></a>        <span class="co"># We must explicitly split the key every time we need new random numbers</span></span>
-<span id="cb7-21"><a href="#cb7-21"></a>        key, p_key, rev_key <span class="op">=</span> jax.random.split(key, <span class="dv">3</span>)</span>
-<span id="cb7-22"><a href="#cb7-22"></a></span>
-<span id="cb7-23"><a href="#cb7-23"></a>        x_p <span class="op">=</span> p_sample(p_key, <span class="dv">1000</span>)</span>
-<span id="cb7-24"><a href="#cb7-24"></a></span>
-<span id="cb7-25"><a href="#cb7-25"></a>        fwd_train_state, _ <span class="op">=</span> update_fwd(fwd_train_state, x_p)</span>
-<span id="cb7-26"><a href="#cb7-26"></a>        rev_train_state, _ <span class="op">=</span> update_rev(rev_train_state, rev_key)</span>
-<span id="cb7-27"><a href="#cb7-27"></a></span>
-<span id="cb7-28"><a href="#cb7-28"></a>    <span class="cf">return</span> fwd_train_state.params, rev_train_state.params</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-20"><a href="#cb7-20"></a>        key, p_key, rev_key <span class="op">=</span> jax.random.split(key, <span class="dv">3</span>)</span>
+<span id="cb7-21"><a href="#cb7-21"></a></span>
+<span id="cb7-22"><a href="#cb7-22"></a>        x_p <span class="op">=</span> p_sample(p_key, <span class="dv">1000</span>)</span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a>        fwd_train_state, _ <span class="op">=</span> update_fwd(fwd_train_state, x_p)</span>
+<span id="cb7-25"><a href="#cb7-25"></a>        rev_train_state, _ <span class="op">=</span> update_rev(rev_train_state, rev_key)</span>
+<span id="cb7-26"><a href="#cb7-26"></a></span>
+<span id="cb7-27"><a href="#cb7-27"></a>    <span class="cf">return</span> fwd_train_state.params, rev_train_state.params</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>Let’s run the code and plot the results!</p>
